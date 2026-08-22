@@ -35,18 +35,79 @@ jobs:
       if: runner.os == 'Linux'
       run: pip install evdev
         
-    - name: Build executable
+    - name: Build executable (Linux/macOS)
+      if: runner.os != 'Windows'
       working-directory: prank_2_input_trigger
       run: |
-        pyinstaller --onefile --noconsole prank_input.py
+        pyinstaller --onefile --noconsole --add-data "*.mp3:." prank_input.py
+        
+    - name: Build executable (Windows)
+      if: runner.os == 'Windows'
+      working-directory: prank_2_input_trigger
+      run: |
+        pyinstaller --onefile --noconsole --add-data "*.mp3;." prank_input.py
+
+    - name: Build AppImage & DEB (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        # AppImage
+        mkdir -p AppDir/usr/bin
+        cp prank_2_input_trigger/dist/prank_input AppDir/usr/bin/Phantom
+        chmod +x AppDir/usr/bin/Phantom
+        cat << 'EOF' > AppDir/AppRun
+        #!/bin/sh
+        HERE="$(dirname "$(readlink -f "${0}")")"
+        exec "${HERE}/usr/bin/Phantom" "$@"
+        EOF
+        chmod +x AppDir/AppRun
+        cat << 'EOF' > AppDir/Phantom.desktop
+        [Desktop Entry]
+        Name=Phantom
+        Exec=Phantom
+        Icon=phantom
+        Type=Application
+        Categories=Utility;
+        EOF
+        touch AppDir/phantom.png
+        # Download linuxdeploy and appimagetool
+        wget -qO appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool
+        ./appimagetool --appimage-extract-and-run AppDir Phantom_v1.0.AppImage
+        
+        # DEB
+        mkdir -p deb-package/DEBIAN
+        mkdir -p deb-package/usr/bin
+        cp prank_2_input_trigger/dist/prank_input deb-package/usr/bin/Phantom
+        chmod +x deb-package/usr/bin/Phantom
+        cat << 'EOF' > deb-package/DEBIAN/control
+        Package: phantom
+        Version: 1.0
+        Section: utils
+        Priority: optional
+        Architecture: amd64
+        Maintainer: Phantom <phantom@test.org>
+        Description: Phantom Prank Application
+        EOF
+        dpkg-deb --build deb-package Phantom_v1.0.deb
+
+    - name: Build DMG (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        mkdir -p Phantom.app/Contents/MacOS
+        cp prank_2_input_trigger/dist/prank_input Phantom.app/Contents/MacOS/Phantom
+        chmod +x Phantom.app/Contents/MacOS/Phantom
+        hdiutil create -volname Phantom -srcfolder Phantom.app -ov -format UDZO Phantom_v1.0.dmg
+
+    - name: Rename EXE (Windows)
+      if: runner.os == 'Windows'
+      run: mv prank_2_input_trigger/dist/prank_input.exe Phantom_v1.0.exe
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: phantom-prank2-${{ matrix.os }}
         path: |
-          prank_2_input_trigger/dist/prank_input*
-          prank_2_input_trigger/*.mp3
+          Phantom_v1.0.*
 
   release:
     name: Publish to Releases
@@ -60,14 +121,9 @@ jobs:
         with:
           path: artifacts
           
-      - name: Zip artifacts
-        run: |
-          cd artifacts
-          zip -r ../phantom-binaries.zip .
-          
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-${{ github.run_number }}
-          name: Build ${{ github.run_number }}
-          files: phantom-binaries.zip
+          tag_name: Phantom_v1.0
+          name: Phantom v1.0
+          files: artifacts/**/*
