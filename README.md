@@ -6,7 +6,7 @@
 
 **Phantom** is a collection of stealthy, unkillable audio prank scripts designed to run completely detached from the terminal and aggressively ignore standard termination signals like `Ctrl+C`. 
 
-This repository contains two primary pranks:
+This repository contains three primary pranks:
 
 ## 1. Prank 1: Infinite Loop (`prank_1_infinite_loop`)
 A cross-platform, zero-dependency script that embeds an audio payload natively within the script itself using Base64 encoding.
@@ -21,6 +21,12 @@ A Python-based daemon that silently monitors for global inputs (specifically the
 - **Wayland Support**: Uses direct `/dev/input/` hardware event monitoring via `evdev` to bypass Linux Wayland's strict global hook security.
 - **Double-Fork Daemon**: Implements a standard double-fork to completely detach from the terminal and run as an invisible background process.
 - **Cooldown Safety**: Prevents audio overlap so rapid typing doesn't create a deafening wall of noise.
+
+## 3. Prank 3: Android App (`prank_3_android`)
+A standalone, harmless Android audio player built using Kivy and Python.
+- **Cross-Platform Building**: Compiled in the cloud using GitHub Actions and Buildozer to avoid local Android Studio dependencies.
+- **Consent-Based**: Explicit "Start" and "Stop" buttons.
+- **Harmless**: Requests zero special permissions and runs completely offline.
 
 ## Installation & Usage
 
