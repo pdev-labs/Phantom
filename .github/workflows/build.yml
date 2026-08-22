@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'prank_2_input_trigger/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
