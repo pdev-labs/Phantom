@@ -28,7 +28,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller pynput evdev
+        pip install pyinstaller pynput
+        
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: pip install evdev
         
     - name: Build executable
       working-directory: prank_2_input_trigger
