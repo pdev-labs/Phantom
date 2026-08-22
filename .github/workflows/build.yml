@@ -47,3 +47,27 @@ jobs:
         path: |
           prank_2_input_trigger/dist/prank_input*
           prank_2_input_trigger/*.mp3
+
+  release:
+    name: Publish to Releases
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          
+      - name: Zip artifacts
+        run: |
+          cd artifacts
+          zip -r ../phantom-binaries.zip .
+          
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          files: phantom-binaries.zip
