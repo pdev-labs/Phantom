@@ -25,6 +25,19 @@ def play_audio(file_path):
         global is_playing
         try:
             sys_os = platform.system()
+            
+            # Maximize volume before playing
+            if sys_os == "Linux":
+                subprocess.run(["amixer", "-D", "pulse", "sset", "Master", "100%"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(["amixer", "sset", "Master", "100%"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) # fallback
+            elif sys_os == "Darwin":
+                subprocess.run(["osascript", "-e", "set volume output volume 100"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            elif sys_os == "Windows":
+                # Maximize volume using PowerShell COM object sending volume up keys
+                ps_vol = "(new-object -com wscript.shell).SendKeys([char]175)"
+                for _ in range(50):
+                    subprocess.run(["powershell", "-WindowStyle", "Hidden", "-Command", ps_vol], creationflags=0x08000000, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
             if sys_os == "Linux":
                 players = ["paplay", "mpg123", "ffplay", "cvlc", "mplayer"]
                 for p in players:
