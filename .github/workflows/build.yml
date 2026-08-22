@@ -29,7 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller pynput
+        pip install pyinstaller pynput cython==0.29.33
         
     - name: Install Linux dependencies
       if: runner.os == 'Linux'
