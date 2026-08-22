@@ -1,5 +1,9 @@
 # Phantom 👻
 
+> [!WARNING]
+> **DISCLAIMER: For Educational Purposes Only**
+> This project was created strictly for educational purposes and harmless pranking. **Do NOT run these scripts on someone else's computer maliciously or without their explicit consent.**
+
 **Phantom** is a collection of stealthy, unkillable audio prank scripts designed to run completely detached from the terminal and aggressively ignore standard termination signals like `Ctrl+C`. 
 
 This repository contains two primary pranks:
