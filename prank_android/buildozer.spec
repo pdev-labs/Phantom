@@ -20,7 +20,7 @@ source.include_exts = py,png,jpg,kv,atlas,mp3
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3==3.10.10,kivy==2.3.0
+requirements = python3,kivy==2.3.0
 
 # (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
 orientation = portrait
@@ -57,6 +57,9 @@ android.accept_sdk_license = True
 
 # (str) Android entry point, default is ok for Kivy-based app
 android.entrypoint = org.kivy.android.PythonActivity
+
+# (str) python-for-android branch to use
+p4a.branch = release-2024.01.21
 
 [buildozer]
 
