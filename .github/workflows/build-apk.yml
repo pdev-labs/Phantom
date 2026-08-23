@@ -14,7 +14,7 @@ on:
 jobs:
   build:
     name: Build APK for ${{ matrix.project }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         project: [prank_android_1_basic, prank_android_2_sensors, prank_android_combined]
