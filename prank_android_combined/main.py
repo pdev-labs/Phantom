@@ -84,10 +84,10 @@ class MainBasicScreen(Screen):
         layout.add_widget(Label(text='[b]Phantom Basic[/b]', markup=True, font_size='32sp', size_hint=(1, 0.2)))
         self.status_label = Label(text='Status: Stopped', font_size='24sp', size_hint=(1, 0.2))
         
-        self.start_btn = Button(text='START PRANK', font_size='24sp', size_hint=(1, 0.2), background_color=(0.2, 0.8, 0.2, 1))
+        self.start_btn = Button(text='START GAME', font_size='24sp', size_hint=(1, 0.2), background_color=(0.2, 0.8, 0.2, 1))
         self.start_btn.bind(on_press=self.start_prank)
         
-        self.stop_btn = Button(text='STOP PRANK', font_size='24sp', size_hint=(1, 0.2), background_color=(0.8, 0.2, 0.2, 1))
+        self.stop_btn = Button(text='STOP GAME', font_size='24sp', size_hint=(1, 0.2), background_color=(0.8, 0.2, 0.2, 1))
         self.stop_btn.bind(on_press=self.stop_prank)
         
         self.toast_label = Label(text='', font_size='18sp', size_hint=(1, 0.2), color=(1, 0.3, 0.3, 1))
@@ -147,8 +147,8 @@ class MainSensorsScreen(Screen):
         self.status_audio = Label(text='Audio: Stopped', font_size='20sp', size_hint=(1, 0.1))
         self.status_triggers = Label(text='Background Triggers: Inactive', font_size='20sp', size_hint=(1, 0.1))
         
-        self.btn_start = Button(text='START PRANK', background_color=(0,0.8,0,1), size_hint=(1, 0.15))
-        self.btn_stop = Button(text='STOP PRANK', background_color=(0.8,0,0,1), size_hint=(1, 0.15))
+        self.btn_start = Button(text='START GAME', background_color=(0,0.8,0,1), size_hint=(1, 0.15))
+        self.btn_stop = Button(text='STOP GAME', background_color=(0.8,0,0,1), size_hint=(1, 0.15))
         self.btn_stop_audio = Button(text='STOP AUDIO', background_color=(0.5,0.5,0.5,1), size_hint=(1, 0.15))
         
         btn_row = BoxLayout(size_hint=(1, 0.15))

@@ -17,10 +17,10 @@ class AudioPlayerApp(App):
         title = Label(text='[b]Phantom Basic[/b]', markup=True, font_size='32sp', size_hint=(1, 0.2))
         self.status_label = Label(text='Status: Stopped', font_size='24sp', size_hint=(1, 0.2))
         
-        self.start_btn = Button(text='START PRANK', font_size='24sp', size_hint=(1, 0.2), background_color=(0.2, 0.8, 0.2, 1))
+        self.start_btn = Button(text='START GAME', font_size='24sp', size_hint=(1, 0.2), background_color=(0.2, 0.8, 0.2, 1))
         self.start_btn.bind(on_press=self.start_prank)
         
-        self.stop_btn = Button(text='STOP PRANK', font_size='24sp', size_hint=(1, 0.2), background_color=(0.8, 0.2, 0.2, 1))
+        self.stop_btn = Button(text='STOP GAME', font_size='24sp', size_hint=(1, 0.2), background_color=(0.8, 0.2, 0.2, 1))
         self.stop_btn.bind(on_press=self.stop_prank)
         
         self.toast_label = Label(text='', font_size='18sp', size_hint=(1, 0.2), color=(1, 0.3, 0.3, 1))

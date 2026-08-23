@@ -58,16 +58,14 @@ class MainScreen(Screen):
         self.status_audio = Label(text='Audio: Stopped', font_size='20sp', size_hint=(1, 0.1))
         self.status_triggers = Label(text='Background Triggers: Inactive', font_size='20sp', size_hint=(1, 0.1))
         
-        self.btn_start = Button(text='START PRANK', background_color=(0,0.8,0,1), size_hint=(1, 0.15))
-        self.btn_stop = Button(text='STOP PRANK', background_color=(0.8,0,0,1), size_hint=(1, 0.15))
-        self.btn_stop_audio = Button(text='STOP AUDIO', background_color=(0.5,0.5,0.5,1), size_hint=(1, 0.15))
+        self.btn_start = Button(text='START GAME', background_color=(0,0.8,0,1), size_hint=(1, 0.15))
+        self.btn_stop = Button(text='STOP GAME', background_color=(0.8,0,0,1), size_hint=(1, 0.15))
         self.btn_settings = Button(text='TRIGGER SETTINGS', size_hint=(1, 0.15))
         
         self.toast_label = Label(text='', color=(1,0,0,1), size_hint=(1, 0.1))
 
         self.btn_start.bind(on_press=self.on_start)
         self.btn_stop.bind(on_press=self.on_stop)
-        self.btn_stop_audio.bind(on_press=self.on_stop_audio)
         self.btn_settings.bind(on_press=lambda x: setattr(self.manager, 'current', 'settings'))
         
         self.layout.add_widget(self.title)
@@ -76,7 +74,6 @@ class MainScreen(Screen):
         self.layout.add_widget(self.status_triggers)
         self.layout.add_widget(self.btn_start)
         self.layout.add_widget(self.btn_stop)
-        self.layout.add_widget(self.btn_stop_audio)
         self.layout.add_widget(self.btn_settings)
         self.layout.add_widget(self.toast_label)
         
@@ -110,20 +107,6 @@ class MainScreen(Screen):
         self.btn_stop.opacity = 1
         self.btn_stop.disabled = False
         self.toast_label.text = ""
-
-    def on_stop_audio(self, instance):
-        self.btn_stop_audio.opacity = 0
-        self.btn_stop_audio.disabled = True
-        
-        st = self.read_state()
-        st['stop_audio_cmd'] = True
-        self.write_state(st)
-        
-        Clock.schedule_once(self.restore_stop_audio_btn, 2)
-
-    def restore_stop_audio_btn(self, dt):
-        self.btn_stop_audio.opacity = 1
-        self.btn_stop_audio.disabled = False
 
     def read_state(self):
         try:
