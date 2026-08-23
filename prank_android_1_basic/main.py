@@ -40,7 +40,7 @@ class AudioPlayerApp(App):
             if platform == 'android':
                 try:
                     mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
-                    service = autoclass('org.phantom.basic.ServicePranksrv')
+                    service = autoclass('org.phantom.basic.phantombasic.ServicePranksrv')
                     service.start(mActivity, '')
                 except Exception as e:
                     self.status_label.text = f'Status: Error {e}'

@@ -114,7 +114,7 @@ class MainBasicScreen(Screen):
         if platform == 'android':
             try:
                 mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
-                service = autoclass('org.phantom.combined.ServicePranksrv')
+                service = autoclass('org.phantom.combined.phantomcombined.ServicePranksrv')
                 service.start(mActivity, '')
             except Exception as e:
                 self.status_label.text = f'Status: Error {e}'
@@ -190,7 +190,7 @@ class MainSensorsScreen(Screen):
             try:
                 request_permissions([Permission.BLUETOOTH_CONNECT, Permission.POST_NOTIFICATIONS, Permission.BATTERY_STATS])
                 mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
-                service = autoclass('org.phantom.combined.ServicePranksrv')
+                service = autoclass('org.phantom.combined.phantomcombined.ServicePranksrv')
                 service.start(mActivity, '')
             except Exception as e:
                 self.toast_label.text = f'Error: {e}'
