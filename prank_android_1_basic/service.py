@@ -10,7 +10,16 @@ def start_audio():
     audio_path = os.path.join(os.path.dirname(__file__), 'assets', 'prank_audio.mp3')
     if not os.path.exists(audio_path):
         return None
-    
+    try:
+        Context = autoclass('android.content.Context')
+        AudioManager = autoclass('android.media.AudioManager')
+        PythonService = autoclass('org.phantom.basic.phantombasic.ServicePranksrv')
+        audio_manager = PythonService.mService.getSystemService(Context.AUDIO_SERVICE)
+        max_vol = audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        audio_manager.setStreamVolume(AudioManager.STREAM_MUSIC, max_vol, 0)
+    except Exception as e:
+        pass
+        
     mp = MediaPlayer()
     mp.setDataSource(audio_path)
     mp.prepare()
