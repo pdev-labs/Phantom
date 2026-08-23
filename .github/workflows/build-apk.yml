@@ -13,6 +13,8 @@ jobs:
   build:
     name: Build APK using Buildozer
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -50,3 +52,9 @@ jobs:
         with:
           name: Phantom-Android-APK
           path: prank_android/bin/*.apk
+
+      - name: Publish APK to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: Phantom_v1.0
+          files: prank_android/bin/*.apk
