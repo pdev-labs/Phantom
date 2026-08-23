@@ -1,60 +1,75 @@
-name: Build Android APK
+name: Build Android APKs
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'prank_android/**'
+      - 'prank_android_1_basic/**'
+      - 'prank_android_2_sensors/**'
+      - 'prank_android_combined/**'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build APK using Buildozer
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
+    name: Build APK for ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [prank_android_1_basic, prank_android_2_sensors, prank_android_combined]
+      fail-fast: false
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip build-essential git python3 python3-dev zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          sudo apt-get install -y build-essential libssl-dev libffi-dev python3-dev
+          sudo apt-get install -y zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake
+          pip install --upgrade Cython==0.29.33 virtualenv buildozer
 
-      - name: Install Buildozer
-        run: pip3 install --user --upgrade buildozer cython==0.29.33 virtualenv
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v3
+        with:
+          path: ~/.buildozer
+          key: buildozer-global-${{ hashFiles(format('{0}/buildozer.spec', matrix.project)) }}
+          restore-keys: |
+            buildozer-global-
 
       - name: Build with Buildozer
-        working-directory: prank_android
+        working-directory: ${{ matrix.project }}
         run: |
-          export PATH=$PATH:~/.local/bin
-          # Accept SDK license automatically
-          export RUNNER_ALLOW_RUNASROOT="1"
           yes | buildozer android debug
 
-      - name: Upload APK Artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Phantom-Android-APK
-          path: prank_android/bin/*.apk
+          name: phantom-apk-${{ matrix.project }}
+          path: ${{ matrix.project }}/bin/*.apk
 
-      - name: Publish APK to Release
-        uses: softprops/action-gh-release@v2
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          tag_name: Phantom_v1.0
-          files: prank_android/bin/*.apk
+          path: apks
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v2.0"
+          name: "Phantom v2.0 (Android Collection)"
+          files: apks/**/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

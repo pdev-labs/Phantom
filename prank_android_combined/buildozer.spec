@@ -1,13 +1,8 @@
 [app]
 
-# (str) Title of your application
-title = Phantom
-
-# (str) Package name
-package.name = phantom
-
-# (str) Package domain (needed for android/ios packaging)
-package.domain = org.test
+title = Phantom Combined
+package.name = phantomcombined
+package.domain = org.phantom.combined
 
 # (str) Application versioning
 version = 1.0

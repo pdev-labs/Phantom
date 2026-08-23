@@ -92,7 +92,7 @@ class MainScreen(Screen):
             try:
                 request_permissions([Permission.BLUETOOTH_CONNECT, Permission.POST_NOTIFICATIONS, Permission.BATTERY_STATS])
                 mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
-                service = autoclass('org.test.phantom.ServicePranksrv')
+                service = autoclass('org.phantom.sensors.ServicePranksrv')
                 service.start(mActivity, '')
             except Exception as e:
                 self.toast_label.text = f'Error: {e}'

@@ -7,7 +7,7 @@ from jnius import autoclass, PythonJavaClass, java_method
 
 MediaPlayer = autoclass('android.media.MediaPlayer')
 Context = autoclass('android.content.Context')
-PythonService = autoclass('org.test.phantom.ServicePranksrv')
+PythonService = autoclass('org.phantom.sensors.ServicePranksrv')
 
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'settings.json')
 STATE_FILE = os.path.join(os.path.dirname(__file__), 'state.json')
