@@ -78,6 +78,31 @@ jobs:
           pip install pyinstaller pygame pynput
       - name: Build with PyInstaller
         run: python build_desktop.py
+      
+      - name: Package for Linux (deb & AppImage)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update && sudo apt-get install -y rubygems
+          sudo gem install fpm
+          wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x appimagetool
+          
+          for app in phantom_desktop_basic phantom_desktop_sensors phantom_desktop_combined; do
+            # Build .deb
+            fpm -s dir -t deb -n $app -v 4.0 --prefix /usr/bin dist/$app=/usr/bin/$app
+            mv *.deb dist/
+            
+            # Build .AppImage
+            mkdir -p AppDir/usr/bin
+            cp dist/$app AppDir/usr/bin/
+            echo -e "[Desktop Entry]\nName=$app\nExec=$app\nIcon=$app\nType=Application\nCategories=Utility;" > AppDir/$app.desktop
+            touch AppDir/$app.png
+            echo -e '#!/bin/sh\ncd "$(dirname "$0")"\nexec ./usr/bin/'$app > AppDir/AppRun
+            chmod +x AppDir/AppRun
+            ./appimagetool AppDir dist/$app-x86_64.AppImage
+            rm -rf AppDir
+          done
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
