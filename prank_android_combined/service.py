@@ -124,7 +124,6 @@ class PrankService:
 
     def trigger_prank(self):
         self.last_trigger_time = time.time()
-        if not self.audio_files: return
             
         if self.media_player:
             try:
@@ -133,11 +132,19 @@ class PrankService:
             except:
                 pass
             
-        audio_file = random.choice(self.audio_files)
+        mode = self.settings.get('mode', 'basic')
+        if mode == 'basic':
+            audio_file = os.path.join(os.path.dirname(__file__), 'assets', 'prank_audio.mp3')
+            if not os.path.exists(audio_file):
+                return
+        else:
+            if not self.audio_files: return
+            audio_file = random.choice(self.audio_files)
+
         self.media_player = MediaPlayer()
         self.media_player.setDataSource(audio_file)
         self.media_player.prepare()
-        if self.settings.get('mode') == 'basic':
+        if mode == 'basic':
             self.media_player.setLooping(True)
         self.media_player.start()
         

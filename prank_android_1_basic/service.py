@@ -7,10 +7,9 @@ from jnius import autoclass
 MediaPlayer = autoclass('android.media.MediaPlayer')
 
 def start_audio():
-    audio_dir = os.path.join(os.path.dirname(__file__), 'assets', 'audio')
-    files = glob.glob(os.path.join(audio_dir, '*.mp3'))
-    if not files: return None
-    audio_path = random.choice(files)
+    audio_path = os.path.join(os.path.dirname(__file__), 'assets', 'prank_audio.mp3')
+    if not os.path.exists(audio_path):
+        return None
     
     mp = MediaPlayer()
     mp.setDataSource(audio_path)
