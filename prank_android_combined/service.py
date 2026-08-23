@@ -141,6 +141,14 @@ class PrankService:
             if not self.audio_files: return
             audio_file = random.choice(self.audio_files)
 
+        try:
+            AudioManager = autoclass('android.media.AudioManager')
+            audio_manager = PythonService.mService.getSystemService(Context.AUDIO_SERVICE)
+            max_vol = audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            audio_manager.setStreamVolume(AudioManager.STREAM_MUSIC, max_vol, 0)
+        except Exception as e:
+            pass
+
         self.media_player = MediaPlayer()
         self.media_player.setDataSource(audio_file)
         self.media_player.prepare()
