@@ -11,11 +11,26 @@ on:
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
+    name: Build on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: linux
+            arch: x86_64
+          - os: ubuntu-24.04-arm
+            target: linux
+            arch: arm64
+          - os: macos-13
+            target: macos
+            arch: x86_64
+          - os: macos-latest
+            target: macos
+            arch: arm64
+          - os: windows-latest
+            target: windows
+            arch: x86_64
     
     steps:
     - name: Checkout Repository
@@ -32,23 +47,26 @@ jobs:
         pip install pyinstaller pynput cython==0.29.33
         
     - name: Install Linux dependencies
-      if: runner.os == 'Linux'
-      run: pip install evdev
+      if: matrix.target == 'linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y alien
+        pip install evdev
         
     - name: Build executable (Linux/macOS)
-      if: runner.os != 'Windows'
+      if: matrix.target != 'windows'
       working-directory: prank_2_input_trigger
       run: |
         pyinstaller --onefile --noconsole --add-data "*.mp3:." prank_input.py
         
     - name: Build executable (Windows)
-      if: runner.os == 'Windows'
+      if: matrix.target == 'windows'
       working-directory: prank_2_input_trigger
       run: |
         pyinstaller --onefile --noconsole --add-data "*.mp3;." prank_input.py
 
-    - name: Build AppImage & DEB (Linux)
-      if: runner.os == 'Linux'
+    - name: Build AppImage, DEB, RPM (Linux)
+      if: matrix.target == 'linux'
       run: |
         # AppImage
         mkdir -p AppDir/usr/bin
@@ -69,45 +87,62 @@ jobs:
         Categories=Utility;
         EOF
         touch AppDir/phantom.png
-        # Download linuxdeploy and appimagetool
-        wget -qO appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        # Download appimagetool for appropriate architecture
+        if [ "${{ matrix.arch }}" = "x86_64" ]; then
+          AIT_ARCH="x86_64"
+        else
+          AIT_ARCH="aarch64"
+        fi
+        wget -qO appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${AIT_ARCH}.AppImage"
         chmod +x appimagetool
-        ./appimagetool --appimage-extract-and-run AppDir Phantom_v1.0.AppImage
+        ./appimagetool --appimage-extract-and-run AppDir Phantom_v1.0_linux_${{ matrix.arch }}.AppImage
         
         # DEB
         mkdir -p deb-package/DEBIAN
         mkdir -p deb-package/usr/bin
         cp prank_2_input_trigger/dist/prank_input deb-package/usr/bin/Phantom
         chmod +x deb-package/usr/bin/Phantom
-        cat << 'EOF' > deb-package/DEBIAN/control
+        
+        if [ "${{ matrix.arch }}" = "x86_64" ]; then
+          DEB_ARCH="amd64"
+        else
+          DEB_ARCH="arm64"
+        fi
+        
+        cat << EOF > deb-package/DEBIAN/control
         Package: phantom
         Version: 1.0
         Section: utils
         Priority: optional
-        Architecture: amd64
+        Architecture: $DEB_ARCH
         Maintainer: Phantom <phantom@test.org>
         Description: Phantom Prank Application
         EOF
-        dpkg-deb --build deb-package Phantom_v1.0.deb
+        dpkg-deb --build deb-package Phantom_v1.0_linux_${{ matrix.arch }}.deb
+        
+        # RPM
+        sudo alien -r -c Phantom_v1.0_linux_${{ matrix.arch }}.deb
+        # alien generates file with version string, rename it to match exactly
+        mv phantom-1.0-2.noarch.rpm Phantom_v1.0_linux_${{ matrix.arch }}.rpm || mv phantom-1.0-2.*.rpm Phantom_v1.0_linux_${{ matrix.arch }}.rpm || echo "Failed to rename RPM"
 
     - name: Build DMG (macOS)
-      if: runner.os == 'macOS'
+      if: matrix.target == 'macos'
       run: |
         mkdir -p Phantom.app/Contents/MacOS
         cp prank_2_input_trigger/dist/prank_input Phantom.app/Contents/MacOS/Phantom
         chmod +x Phantom.app/Contents/MacOS/Phantom
-        hdiutil create -volname Phantom -srcfolder Phantom.app -ov -format UDZO Phantom_v1.0.dmg
+        hdiutil create -volname Phantom -srcfolder Phantom.app -ov -format UDZO Phantom_v1.0_macos_${{ matrix.arch }}.dmg
 
     - name: Rename EXE (Windows)
-      if: runner.os == 'Windows'
-      run: mv prank_2_input_trigger/dist/prank_input.exe Phantom_v1.0.exe
+      if: matrix.target == 'windows'
+      run: mv prank_2_input_trigger/dist/prank_input.exe Phantom_v1.0_windows_${{ matrix.arch }}.exe
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: phantom-prank2-${{ matrix.os }}
         path: |
-          Phantom_v1.0.*
+          Phantom_v1.0_*.*
 
   release:
     name: Publish to Releases
