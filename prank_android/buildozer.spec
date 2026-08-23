@@ -34,7 +34,8 @@ fullscreen = 0
 
 # (list) Permissions
 # We only need standard permissions, maybe INTERNET if buildozer defaults to it, but none explicit required for local audio
-android.permissions = 
+android.permissions = FOREGROUND_SERVICE, WAKE_LOCK, POST_NOTIFICATIONS, FOREGROUND_SERVICE_MEDIA_PLAYBACK
+services = pranksrv:service.py:foreground:foregroundServiceType=mediaPlayback
 
 # (int) Target Android API, should be as high as possible.
 android.api = 33
