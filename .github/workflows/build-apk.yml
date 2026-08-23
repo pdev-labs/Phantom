@@ -76,8 +76,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v2.0"
-          name: "Phantom v2.0 (Android Collection)"
+          tag_name: "v3.0"
+          name: "Phantom v3.0 (Android Collection)"
           files: apks/**/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
