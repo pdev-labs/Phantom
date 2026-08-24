@@ -40,6 +40,9 @@ android.api = 33
 # (int) Minimum API your APK / AAB will support.
 android.minapi = 21
 
+# (str) Android release artifact (apk or aab)
+android.release_artifact = apk
+
 # (str) Android NDK version to use
 # android.ndk = 25b
 
