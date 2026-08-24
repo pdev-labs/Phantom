@@ -48,6 +48,77 @@ def save_settings(settings):
     with open(SETTINGS_FILE, 'w') as f:
         json.dump(settings, f)
 
+class SetupScreen(Screen):
+    def __init__(self, **kwargs):
+        super(SetupScreen, self).__init__(**kwargs)
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
+        
+        title = Label(text='[b]Welcome to Phantom[/b]', markup=True, font_size='32sp', size_hint_y=0.1)
+        layout.add_widget(title)
+        
+        info_text = (
+            "How to START the prank:\n"
+            "1. Press Start Game.\n"
+            "2. The audio will continue playing even if Phantom is removed from the Recent Apps screen.\n\n"
+            "How to STOP the prank:\n"
+            "1. Use Stop inside Phantom or the Stop button in the notification.\n\n"
+            "Optional Uninstall Protection:\n"
+            "This requires Android device management and may restrict normal uninstalling while active. "
+            "It requires explicit user consent.\n\n"
+            "How to Remove Protection:\n"
+            "You must disable the protection in Settings or remove the management policy before you can uninstall."
+        )
+        
+        info_lbl = Label(text=info_text, font_size='16sp', text_size=(None, None), halign='left', valign='top')
+        info_lbl.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+        scroll = ScrollView(size_hint_y=0.6)
+        scroll.add_widget(info_lbl)
+        layout.add_widget(scroll)
+        
+        self.btn_enable = Button(text='Enable Uninstall Protection', size_hint_y=0.15, background_color=(0.8,0.2,0.2,1))
+        self.btn_enable.bind(on_press=self.enable_protection)
+        
+        self.btn_continue = Button(text='Continue Without Protection', size_hint_y=0.15, background_color=(0.2,0.8,0.2,1))
+        self.btn_continue.bind(on_press=self.continue_without)
+        
+        layout.add_widget(self.btn_enable)
+        layout.add_widget(self.btn_continue)
+        
+        self.add_widget(layout)
+
+    def enable_protection(self, instance):
+        if platform != 'android':
+            self.finish_setup()
+            return
+        try:
+            Context = autoclass('android.content.Context')
+            DevicePolicyManager = autoclass('android.app.admin.DevicePolicyManager')
+            ComponentName = autoclass('android.content.ComponentName')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            Intent = autoclass('android.content.Intent')
+            String = autoclass('java.lang.String')
+            
+            mActivity = PythonActivity.mActivity
+            comp = ComponentName(mActivity, "org.phantom.combined.PhantomAdminReceiver")
+            
+            intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, comp)
+            intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, String("Phantom uses Uninstall Protection via Device Management. You explicitly consent to restricting uninstallation while this is active."))
+            mActivity.startActivity(intent)
+            
+            Clock.schedule_once(lambda dt: self.finish_setup(), 1)
+        except Exception as e:
+            self.finish_setup()
+            
+    def continue_without(self, instance):
+        self.finish_setup()
+        
+    def finish_setup(self):
+        s = load_settings()
+        s['first_launch_done'] = True
+        save_settings(s)
+        self.manager.current = 'mode'
+
 class ModeScreen(Screen):
     def __init__(self, **kwargs):
         super(ModeScreen, self).__init__(**kwargs)
@@ -311,6 +382,18 @@ class SettingsScreen(Screen):
             self.poll_event.cancel()
             self.poll_event = None
 
+    def is_device_owner(self):
+        if platform != 'android':
+            return False
+        try:
+            Context = autoclass('android.content.Context')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            dpm = PythonActivity.mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE)
+            packageName = PythonActivity.mActivity.getPackageName()
+            return dpm.isDeviceOwnerApp(packageName)
+        except Exception:
+            return False
+
     def is_admin_active(self):
         if platform != 'android':
             return False
@@ -327,14 +410,37 @@ class SettingsScreen(Screen):
 
     def update_admin_ui(self, dt=None):
         if platform != 'android':
-            self.admin_btn.text = 'Not Available on Desktop'
+            self.admin_lbl.text = 'Not Available on Desktop'
             self.admin_btn.disabled = True
             return
             
-        if self.is_admin_active():
-            self.admin_btn.text = 'DISABLE'
+        is_admin = self.is_admin_active()
+        is_do = self.is_device_owner()
+        
+        if is_do:
+            try:
+                Context = autoclass('android.content.Context')
+                ComponentName = autoclass('android.content.ComponentName')
+                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+                UserManager = autoclass('android.os.UserManager')
+                String = autoclass('java.lang.String')
+                
+                dpm = PythonActivity.mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE)
+                comp = ComponentName(PythonActivity.mActivity, "org.phantom.combined.PhantomAdminReceiver")
+                # Apply the uninstall restriction
+                dpm.addUserRestriction(comp, String(UserManager.DISALLOW_UNINSTALL_APPS))
+            except Exception:
+                pass
+                
+            self.admin_lbl.text = "Uninstall Protection: ON\n(Device Owner Active)"
+            self.admin_btn.text = 'DISABLE PROTECTION'
             self.admin_btn.background_color = (0.8, 0.2, 0.2, 1)
+        elif is_admin:
+            self.admin_lbl.text = "Device Management Required\n(Run ADB command to enable)"
+            self.admin_btn.text = 'REMOVE ADMIN'
+            self.admin_btn.background_color = (0.8, 0.5, 0.2, 1)
         else:
+            self.admin_lbl.text = "Uninstall Protection: OFF"
             self.admin_btn.text = 'ENABLE'
             self.admin_btn.background_color = (0.2, 0.8, 0.2, 1)
 
@@ -347,18 +453,33 @@ class SettingsScreen(Screen):
             PythonActivity = autoclass('org.kivy.android.PythonActivity')
             Intent = autoclass('android.content.Intent')
             String = autoclass('java.lang.String')
+            UserManager = autoclass('android.os.UserManager')
             
             mActivity = PythonActivity.mActivity
             dpm = mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE)
             comp = ComponentName(mActivity, "org.phantom.combined.PhantomAdminReceiver")
             
-            if dpm.isAdminActive(comp):
+            is_admin = dpm.isAdminActive(comp)
+            is_do = self.is_device_owner()
+            
+            if is_do:
+                try:
+                    dpm.clearUserRestriction(comp, String(UserManager.DISALLOW_UNINSTALL_APPS))
+                except:
+                    pass
+                try:
+                    dpm.clearDeviceOwnerApp(mActivity.getPackageName())
+                except:
+                    pass
+                dpm.removeActiveAdmin(comp)
+                self.admin_btn.text = 'Disabling...'
+            elif is_admin:
                 dpm.removeActiveAdmin(comp)
                 self.admin_btn.text = 'Disabling...'
             else:
                 intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
                 intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, comp)
-                intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, String("Phantom requires Administrator privileges to enable advanced triggers and prevent unauthorized modification."))
+                intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, String("Phantom requires Administrator privileges to prevent unauthorized uninstallation."))
                 mActivity.startActivity(intent)
         except Exception as e:
             self.admin_btn.text = 'Error'
