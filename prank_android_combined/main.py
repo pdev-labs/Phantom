@@ -120,11 +120,9 @@ class MainBasicScreen(Screen):
                 self.status_label.text = f'Status: Error {e}'
             
     def stop_prank(self, instance):
-        self.write_state({'armed': False, 'audio': 'Stopped', 'stop_audio_cmd': False})
-        self.status_label.text = 'Status: Stopped'
         self.stop_btn.opacity = 0
         self.stop_btn.disabled = True
-        self.toast_label.text = "Go to app settings to force stop"
+        self.toast_label.text = "Please stop the audio via the Notification"
         Clock.schedule_once(self.hide_toast, 3)
             
     def hide_toast(self, dt):
@@ -196,11 +194,13 @@ class MainSensorsScreen(Screen):
                 self.toast_label.text = f'Error: {e}'
 
     def on_stop(self, instance):
-        self.write_state({'armed': False, 'audio': 'Stopped', 'stop_audio_cmd': False})
+        st = self.read_state()
+        st['armed'] = False
+        self.write_state(st)
         self.btn_stop.opacity = 0
         self.btn_stop.disabled = True
-        self.toast_label.text = "Force stop the app to stop entirely"
-        Clock.schedule_once(self.restore_stop_btn, 2)
+        self.toast_label.text = "Please stop the audio via the Notification"
+        Clock.schedule_once(self.restore_stop_btn, 3)
 
     def restore_stop_btn(self, dt):
         self.btn_stop.opacity = 1

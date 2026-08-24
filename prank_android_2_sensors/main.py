@@ -95,13 +95,17 @@ class MainScreen(Screen):
                 self.toast_label.text = f'Error: {e}'
 
     def on_stop(self, instance):
-        self.write_state({'armed': False, 'audio': 'Stopped', 'stop_audio_cmd': False})
+        # We DO NOT stop the audio via the UI button anymore to satisfy the persistence requirement
+        # We only stop the triggers from firing new audio events
+        st = self.read_state()
+        st['armed'] = False
+        self.write_state(st)
         
         self.btn_stop.opacity = 0
         self.btn_stop.disabled = True
-        self.toast_label.text = "Force stop the app to stop entirely"
+        self.toast_label.text = "Please stop the audio via the Notification"
         
-        Clock.schedule_once(self.restore_stop_btn, 2)
+        Clock.schedule_once(self.restore_stop_btn, 3)
 
     def restore_stop_btn(self, dt):
         self.btn_stop.opacity = 1

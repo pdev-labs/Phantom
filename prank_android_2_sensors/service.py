@@ -8,9 +8,47 @@ from jnius import autoclass, PythonJavaClass, java_method
 MediaPlayer = autoclass('android.media.MediaPlayer')
 Context = autoclass('android.content.Context')
 PythonService = autoclass('org.phantom.sensors.phantomsensors.ServicePranksrv')
+Intent = autoclass('android.content.Intent')
+PendingIntent = autoclass('android.app.PendingIntent')
+NotificationBuilder = autoclass('android.app.Notification$Builder')
+NotificationChannel = autoclass('android.app.NotificationChannel')
+NotificationManager = autoclass('android.app.NotificationManager')
+String = autoclass('java.lang.String')
 
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'settings.json')
 STATE_FILE = os.path.join(os.path.dirname(__file__), 'state.json')
+
+def start_foreground():
+    mService = PythonService.mService
+    channel_id = "phantom_channel"
+    channel_name = "Phantom Playback"
+    
+    # Create notification channel for Android O+
+    if autoclass('android.os.Build$VERSION').SDK_INT >= 26:
+        channel = NotificationChannel(
+            String(channel_id),
+            String(channel_name),
+            NotificationManager.IMPORTANCE_LOW
+        )
+        notification_manager = mService.getSystemService(Context.NOTIFICATION_SERVICE)
+        notification_manager.createNotificationChannel(channel)
+        builder = NotificationBuilder(mService, String(channel_id))
+    else:
+        builder = NotificationBuilder(mService)
+        
+    builder.setContentTitle(String("Phantom"))
+    builder.setContentText(String("Playing background audio..."))
+    # Use standard android icon since we might not have app icon mapped easily
+    builder.setSmallIcon(17301540) # android.R.drawable.ic_media_play
+    
+    # Add Stop Action
+    stop_intent = Intent("org.phantom.STOP_PHANTOM")
+    # FLAG_IMMUTABLE is required on Android 12+ (flag 67108864)
+    stop_pending_intent = PendingIntent.getBroadcast(mService, 0, stop_intent, 67108864)
+    builder.addAction(17301539, String("Stop"), stop_pending_intent) # android.R.drawable.ic_media_pause
+    
+    notification = builder.build()
+    mService.startForeground(1, notification)
 
 class HardwareListener(PythonJavaClass):
     __javainterfaces__ = ['android/hardware/SensorEventListener']
@@ -69,7 +107,8 @@ class PrankService:
                 'android.intent.action.ACTION_POWER_CONNECTED',
                 'android.intent.action.ACTION_POWER_DISCONNECTED',
                 'android.bluetooth.device.action.ACL_CONNECTED',
-                'android.bluetooth.device.action.ACL_DISCONNECTED'
+                'android.bluetooth.device.action.ACL_DISCONNECTED',
+                'org.phantom.STOP_PHANTOM'
             ])
 
     def load_audio_files(self):
@@ -95,8 +134,16 @@ class PrankService:
             return {}
 
     def on_broadcast(self, context, intent):
-        if not self.armed: return
         action = intent.getAction()
+        if action == 'org.phantom.STOP_PHANTOM':
+            st = self.read_state()
+            st['stop_audio_cmd'] = True
+            st['armed'] = False
+            self.write_state(st)
+            return
+
+        if not self.armed: return
+        
         if action == 'android.intent.action.ACTION_POWER_CONNECTED' and self.settings.get('charger_connected'):
             self.trigger_prank()
         elif action == 'android.intent.action.ACTION_POWER_DISCONNECTED' and self.settings.get('charger_disconnected'):
@@ -186,6 +233,11 @@ class PrankService:
         self.write_state(st)
 
     def run(self):
+        try:
+            start_foreground()
+        except Exception as e:
+            pass
+            
         while True:
             st = self.read_state()
             self.armed = st.get('armed', False)
@@ -194,6 +246,12 @@ class PrankService:
             # Check if UI requested an audio stop
             if st.get('stop_audio_cmd', False):
                 self.stop_audio()
+                try:
+                    PythonService.mService.stopForeground(True)
+                    PythonService.mService.stopSelf()
+                except:
+                    pass
+                break # Exit the loop so the service dies naturally
                 
             # Manage sensors
             if self.armed and not self.sensors_registered:

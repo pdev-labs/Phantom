@@ -8,9 +8,43 @@ from jnius import autoclass, PythonJavaClass, java_method
 MediaPlayer = autoclass('android.media.MediaPlayer')
 Context = autoclass('android.content.Context')
 PythonService = autoclass('org.phantom.combined.phantomcombined.ServicePranksrv')
+Intent = autoclass('android.content.Intent')
+PendingIntent = autoclass('android.app.PendingIntent')
+NotificationBuilder = autoclass('android.app.Notification$Builder')
+NotificationChannel = autoclass('android.app.NotificationChannel')
+NotificationManager = autoclass('android.app.NotificationManager')
+String = autoclass('java.lang.String')
 
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'settings.json')
 STATE_FILE = os.path.join(os.path.dirname(__file__), 'state.json')
+
+def start_foreground():
+    mService = PythonService.mService
+    channel_id = "phantom_channel"
+    channel_name = "Phantom Playback"
+    
+    if autoclass('android.os.Build$VERSION').SDK_INT >= 26:
+        channel = NotificationChannel(
+            String(channel_id),
+            String(channel_name),
+            NotificationManager.IMPORTANCE_LOW
+        )
+        notification_manager = mService.getSystemService(Context.NOTIFICATION_SERVICE)
+        notification_manager.createNotificationChannel(channel)
+        builder = NotificationBuilder(mService, String(channel_id))
+    else:
+        builder = NotificationBuilder(mService)
+        
+    builder.setContentTitle(String("Phantom"))
+    builder.setContentText(String("Playing background audio..."))
+    builder.setSmallIcon(17301540)
+    
+    stop_intent = Intent("org.phantom.STOP_PHANTOM")
+    stop_pending_intent = PendingIntent.getBroadcast(mService, 0, stop_intent, 67108864)
+    builder.addAction(17301539, String("Stop"), stop_pending_intent)
+    
+    notification = builder.build()
+    mService.startForeground(1, notification)
 
 class HardwareListener(PythonJavaClass):
     __javainterfaces__ = ['android/hardware/SensorEventListener']
@@ -57,7 +91,8 @@ class PrankService:
                 'android.intent.action.ACTION_POWER_CONNECTED',
                 'android.intent.action.ACTION_POWER_DISCONNECTED',
                 'android.bluetooth.device.action.ACL_CONNECTED',
-                'android.bluetooth.device.action.ACL_DISCONNECTED'
+                'android.bluetooth.device.action.ACL_DISCONNECTED',
+                'org.phantom.STOP_PHANTOM'
             ])
 
     def load_audio_files(self):
@@ -83,8 +118,16 @@ class PrankService:
             return {'mode': 'basic'}
 
     def on_broadcast(self, context, intent):
-        if not self.armed or self.settings.get('mode') != 'sensors': return
         action = intent.getAction()
+        if action == 'org.phantom.STOP_PHANTOM':
+            st = self.read_state()
+            st['stop_audio_cmd'] = True
+            st['armed'] = False
+            self.write_state(st)
+            return
+            
+        if not self.armed or self.settings.get('mode') != 'sensors': return
+        
         if action == 'android.intent.action.ACTION_POWER_CONNECTED' and self.settings.get('charger_connected'):
             self.trigger_prank()
         elif action == 'android.intent.action.ACTION_POWER_DISCONNECTED' and self.settings.get('charger_disconnected'):
@@ -175,6 +218,11 @@ class PrankService:
         self.write_state(st)
 
     def run(self):
+        try:
+            start_foreground()
+        except Exception as e:
+            pass
+            
         was_armed = False
         while True:
             st = self.read_state()
@@ -194,6 +242,12 @@ class PrankService:
             # Check if UI requested an audio stop
             if st.get('stop_audio_cmd', False):
                 self.stop_audio()
+                try:
+                    PythonService.mService.stopForeground(True)
+                    PythonService.mService.stopSelf()
+                except:
+                    pass
+                break
                 
             # Manage sensors (only needed for sensors mode)
             if self.armed and mode == 'sensors' and not self.sensors_registered:

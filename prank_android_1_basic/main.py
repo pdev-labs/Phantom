@@ -49,7 +49,7 @@ class AudioPlayerApp(App):
         if self.is_playing:
             self.stop_btn.opacity = 0
             self.stop_btn.disabled = True
-            self.toast_label.text = "Go to app settings to force stop"
+            self.toast_label.text = "Please stop the audio via the Notification"
             Clock.schedule_once(self.hide_toast, 3)
             
     def hide_toast(self, dt):
