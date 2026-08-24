@@ -192,8 +192,10 @@ class PrankService:
         if not self.audio_files:
             return
             
+        is_fresh_start = True
         if self.media_player:
             try:
+                is_fresh_start = not self.media_player.isPlaying()
                 self.media_player.stop()
                 self.media_player.release()
             except:
@@ -201,17 +203,20 @@ class PrankService:
             
         audio_file = random.choice(self.audio_files)
         
-        try:
-            AudioManager = autoclass('android.media.AudioManager')
-            audio_manager = PythonService.mService.getSystemService(Context.AUDIO_SERVICE)
-            max_vol = audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-            audio_manager.setStreamVolume(AudioManager.STREAM_MUSIC, max_vol, 0)
-        except Exception as e:
-            pass
+        if is_fresh_start:
+            try:
+                AudioManager = autoclass('android.media.AudioManager')
+                audio_manager = PythonService.mService.getSystemService(Context.AUDIO_SERVICE)
+                if not audio_manager.isVolumeFixed():
+                    max_vol = audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                    audio_manager.setStreamVolume(AudioManager.STREAM_MUSIC, max_vol, 0)
+            except Exception as e:
+                pass
             
         self.media_player = MediaPlayer()
         self.media_player.setDataSource(audio_file)
         self.media_player.prepare()
+        self.media_player.setVolume(1.0, 1.0)
         self.media_player.start()
         
         st = self.read_state()

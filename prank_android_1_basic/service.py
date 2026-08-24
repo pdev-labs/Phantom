@@ -55,8 +55,9 @@ def start_audio():
     try:
         AudioManager = autoclass('android.media.AudioManager')
         audio_manager = PythonService.mService.getSystemService(Context.AUDIO_SERVICE)
-        max_vol = audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        audio_manager.setStreamVolume(AudioManager.STREAM_MUSIC, max_vol, 0)
+        if not audio_manager.isVolumeFixed():
+            max_vol = audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            audio_manager.setStreamVolume(AudioManager.STREAM_MUSIC, max_vol, 0)
     except Exception as e:
         pass
         
@@ -64,6 +65,7 @@ def start_audio():
     mp.setDataSource(audio_path)
     mp.prepare()
     mp.setLooping(True)
+    mp.setVolume(1.0, 1.0)
     mp.start()
     return mp
 
