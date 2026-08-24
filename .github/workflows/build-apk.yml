@@ -122,10 +122,11 @@ jobs:
           path: artifacts
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v4.0"
-          name: "Phantom v4.0 (Android & Desktop Collection)"
+          tag_name: "v4.0.${{ github.run_number }}"
+          name: "Phantom v4.0 (Build ${{ github.run_number }})"
+          make_latest: true
           files: |
             artifacts/**/*.apk
             artifacts/**/*desktop*/*
