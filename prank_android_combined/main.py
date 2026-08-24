@@ -264,6 +264,13 @@ class SettingsScreen(Screen):
         self.grid = GridLayout(cols=2, size_hint_y=None, padding=20, spacing=20)
         self.grid.bind(minimum_height=self.grid.setter('height'))
         
+        # Device Admin section
+        self.admin_lbl = Label(text='Device Administrator', size_hint_y=None, height=100)
+        self.admin_btn = Button(text='Loading...', size_hint_y=None, height=100)
+        self.admin_btn.bind(on_press=self.toggle_admin)
+        self.grid.add_widget(self.admin_lbl)
+        self.grid.add_widget(self.admin_btn)
+        
         self.settings = load_settings()
         
         triggers = [
@@ -288,6 +295,73 @@ class SettingsScreen(Screen):
         scroll.add_widget(self.grid)
         self.layout.add_widget(scroll)
         self.add_widget(self.layout)
+        
+        self.poll_event = None
+        self.on_enter = self.start_polling
+        self.on_leave = self.stop_polling
+        self.update_admin_ui()
+
+    def start_polling(self):
+        if self.poll_event:
+            self.poll_event.cancel()
+        self.poll_event = Clock.schedule_interval(self.update_admin_ui, 1.0)
+        
+    def stop_polling(self):
+        if self.poll_event:
+            self.poll_event.cancel()
+            self.poll_event = None
+
+    def is_admin_active(self):
+        if platform != 'android':
+            return False
+        try:
+            Context = autoclass('android.content.Context')
+            ComponentName = autoclass('android.content.ComponentName')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            
+            dpm = PythonActivity.mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE)
+            comp = ComponentName(PythonActivity.mActivity, "org.phantom.combined.PhantomAdminReceiver")
+            return dpm.isAdminActive(comp)
+        except Exception as e:
+            return False
+
+    def update_admin_ui(self, dt=None):
+        if platform != 'android':
+            self.admin_btn.text = 'Not Available on Desktop'
+            self.admin_btn.disabled = True
+            return
+            
+        if self.is_admin_active():
+            self.admin_btn.text = 'DISABLE'
+            self.admin_btn.background_color = (0.8, 0.2, 0.2, 1)
+        else:
+            self.admin_btn.text = 'ENABLE'
+            self.admin_btn.background_color = (0.2, 0.8, 0.2, 1)
+
+    def toggle_admin(self, instance):
+        if platform != 'android': return
+        try:
+            Context = autoclass('android.content.Context')
+            DevicePolicyManager = autoclass('android.app.admin.DevicePolicyManager')
+            ComponentName = autoclass('android.content.ComponentName')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            Intent = autoclass('android.content.Intent')
+            String = autoclass('java.lang.String')
+            
+            mActivity = PythonActivity.mActivity
+            dpm = mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE)
+            comp = ComponentName(mActivity, "org.phantom.combined.PhantomAdminReceiver")
+            
+            if dpm.isAdminActive(comp):
+                dpm.removeActiveAdmin(comp)
+                self.admin_btn.text = 'Disabling...'
+            else:
+                intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, comp)
+                intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, String("Phantom requires Administrator privileges to enable advanced triggers and prevent unauthorized modification."))
+                mActivity.startActivity(intent)
+        except Exception as e:
+            self.admin_btn.text = 'Error'
 
     def update_setting(self, key, value):
         self.settings[key] = value

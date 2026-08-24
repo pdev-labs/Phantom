@@ -31,7 +31,9 @@ fullscreen = 0
 # We only need standard permissions, maybe INTERNET if buildozer defaults to it, but none explicit required for local audio
 android.permissions = FOREGROUND_SERVICE, WAKE_LOCK, POST_NOTIFICATIONS, FOREGROUND_SERVICE_MEDIA_PLAYBACK, BLUETOOTH, BLUETOOTH_CONNECT, BATTERY_STATS
 services = pranksrv:service.py:foreground:sticky:foregroundServiceType=mediaPlayback
-
+android.add_src = java
+android.add_res = res
+p4a.hook = p4a/hook.py
 # (int) Target Android API, should be as high as possible.
 android.api = 33
 
