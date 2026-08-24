@@ -82,7 +82,7 @@ jobs:
       - name: Package for Linux (deb & AppImage)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo apt-get update && sudo apt-get install -y rubygems
+          sudo apt-get update && sudo apt-get install -y rubygems libfuse2
           sudo gem install fpm
           wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
           chmod +x appimagetool
